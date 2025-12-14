@@ -1,24 +1,32 @@
 FROM debian:oldstable
+#name = {wordpress}
 
-WORKDIR /var/www/html/
+# EXEC SCRIPT PARA CARREGAR ENV DO SECRET
+# LER CADA UM DOS ARQUIVOS DA PASTA SECRETS
+# EXPORTAR PARA ENV DO TERMINAL 'export $NAME=$VALUE';
 
+# Variáveis de build
+ARG DATABASE_NAME
+ARG DATABASE_ADMIN
+ARG DATABASE_ADMIN_PASS
+ARG URL
+ARG TITLE
+ARG WORDPRESS_ADMIN_EMAIL
+ARG WORDPRESS_USER_PASS
+
+# Instalar dependências
 RUN apt-get update -y \
- && apt-get upgrade -y \
- && apt-get install -y \
-    php php-fpm php-mysql \
-    default-mysql-client \
-    wget
+    && apt-get upgrade -y \
+    && apt-get install -y php8.2-fpm php8.2-mysql php8.2-gd wget unzip curl mariadb-client less \
+    && apt-get clean
 
-
-RUN mkdir -p /run/php
-
-RUN chown -R www-data:www-data /var/www/html && \
-	chmod 755 /var/www/html
-
-COPY conf/www.conf /etc/php/7.4/fpm/pool.d/www.conf
-
+# Copiar configuração e script
+COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
 COPY tools/script.sh /tmp/script.sh
-
 RUN chmod +x /tmp/script.sh
 
-CMD ["php-fpm8.2", "-F"]
+# Entrypoint garante que o WordPress será instalado e PHP-FPM rodará
+ENTRYPOINT ["/tmp/script.sh"]
+
+
+#The Docker images must have the same name as their corresponding service. Otherwise, the evaluation process ends now.

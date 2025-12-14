@@ -1,21 +1,23 @@
 #!/bin/bash
 set -e
 
+# Log
 exec > /tmp/wp_log 2>&1
 
-# Wait for MariaDB
+# Espera MariaDB subir
 until mysqladmin ping -h mariadb --silent; do
     echo "Waiting for MariaDB..."
     sleep 2
 done
 
-# Install wp-cli if not exists
+# Baixar WP-CLI se não existir
 if [ ! -f /usr/local/bin/wp ]; then
-    wget -O /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+    mv wp-cli.phar /usr/local/bin/wp
     chmod +x /usr/local/bin/wp
 fi
 
-# WordPress setup (idempotent)
+# Instalar WordPress se não existir
 if [ ! -f /var/www/html/wp-config.php ]; then
     wp core download --allow-root --path=/var/www/html
 
@@ -44,6 +46,9 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --allow-root
 fi
 
+# Permissões corretas
 chown -R www-data:www-data /var/www/html
 
+# Executar PHP-FPM no foreground
 exec /usr/sbin/php-fpm8.2 -F
+

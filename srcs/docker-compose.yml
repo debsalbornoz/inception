@@ -1,72 +1,78 @@
-services:
-        nginx:
-                build: requirements/nginx
-                container_name: nginx
-                depends_on:
-                        - mariadb
-                        - wordpress
-                restart: on-failure
-                init: true
-                networks:
-                        - inception
-                ports:
-                        - "443:443"
-                volumes:
-                        - website:/var/www/html
+version: "3.9"
 
-        mariadb:
-                build:
-                        context:  requirements/mariadb
-                        args:
-                                - DATABASE_NAME
-                                - DATABASE_ADMIN
-                                - DATABASE_ADMIN_PASS
-                container_name: mariadb
-                restart: on-failure
-                init: true
-                networks:
-                        - inception
-                expose:
-                        - "3306"
-                volumes:
-                        - database:/var/lib/mysql
-        wordpress:
-                build: requirements/wordpress
-                container_name: wordpress
-                restart: on-failure
-                init: true
-                networks:
-                        - inception
-                depends_on:
-                        - mariadb
-                expose:
-                        - "9000"
-                volumes:
-                        - website:/var/www/html
-                environment:
-                        - DATABASE_NAME
-                        - DATABASE_ADMIN
-                        - DATABASE_ADMIN_PASS
-                        - URL
-                        - TITLE
-                        - WORDPRESS_ADMIN_EMAIL
-                        - WORDPRESS_USER_PASS
+services:
+  mariadb:
+    build:
+      context: requirements/mariadb
+      args:
+        - DATABASE_NAME
+        - DATABASE_ADMIN
+        - DATABASE_ADMIN_PASS
+    container_name: mariadb
+    restart: on-failure
+    init: true
+    networks:
+      - inception
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_ADMIN_PASS}
+    volumes:
+      - database:/var/lib/mysql
+    expose:
+      - "3306"
+
+  wordpress:
+    build:
+      context: requirements/wordpress
+      args:
+        - DATABASE_NAME
+        - DATABASE_ADMIN
+        - DATABASE_ADMIN_PASS
+        - URL
+        - TITLE
+        - WORDPRESS_ADMIN_EMAIL
+        - WORDPRESS_USER_PASS
+    container_name: wordpress
+    restart: on-failure
+    init: true
+    networks:
+      - inception
+    depends_on:
+      - mariadb
+    volumes:
+      - website:/var/www/html
+    expose:
+      - "9000"
+
+  nginx:
+    build:
+      context: requirements/nginx
+    container_name: nginx
+    restart: on-failure
+    init: true
+    depends_on:
+      - wordpress
+      - mariadb
+    networks:
+      - inception
+    ports:
+      - "443:443"
+    volumes:
+      - website:/var/www/html
 
 volumes:
-        database:
-                name: database
-                driver: local
-                driver_opts:
-                        type: none
-                        o: bind
-                        device: ${VOLUMES_PATH}/database
-        website:
-                name: website
-                driver: local
-                driver_opts:
-                        type: none
-                        o: bind
-                        device: ${VOLUMES_PATH}/website
+  database:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${VOLUMES_PATH}/database
+  website:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${VOLUMES_PATH}/website
 
 networks:
-        inception:
+  inception:
+    driver: bridge
