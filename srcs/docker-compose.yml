@@ -11,6 +11,7 @@ services:
     container_name: mariadb
     restart: on-failure
     init: true
+    image: mariadb
     networks:
       - inception
     environment:
@@ -31,6 +32,7 @@ services:
         - TITLE
         - WORDPRESS_ADMIN_EMAIL
         - WORDPRESS_USER_PASS
+    image: wordpress
     container_name: wordpress
     restart: on-failure
     init: true
@@ -48,6 +50,7 @@ services:
       context: requirements/nginx
     container_name: nginx
     restart: on-failure
+    image: nginx
     init: true
     depends_on:
       - wordpress
